@@ -1,0 +1,23 @@
+.dashboard-container{
+
+    background:#0F172A;
+
+    min-height:100vh;
+
+}
+
+.dashboard-body{
+
+    display:flex;
+
+}
+
+.dashboard-content{
+
+    flex:1;
+
+    padding:30px;
+
+    color:white;
+
+}
