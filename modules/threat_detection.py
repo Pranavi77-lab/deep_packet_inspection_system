@@ -1,59 +1,93 @@
-"""
-Threat Detection Module
-"""
+# modules/threat_detection.py
 
-def detect_threat(payload):
+import re
 
-    if payload is None:
+# Suspicious ports and their descriptions
+SUSPICIOUS_PORTS = {
+    21: ("FTP Traffic", "MEDIUM"),
+    23: ("Telnet Traffic", "HIGH"),
+    135: ("RPC Service", "MEDIUM"),
+    137: ("NetBIOS Name Service", "MEDIUM"),
+    138: ("NetBIOS Datagram", "MEDIUM"),
+    139: ("NetBIOS Session", "HIGH"),
+    445: ("SMB Traffic", "HIGH"),
+    3389: ("Remote Desktop (RDP)", "HIGH"),
+}
+
+# Keywords that may indicate suspicious payloads
+SUSPICIOUS_KEYWORDS = [
+    "attack",
+    "malware",
+    "virus",
+    "exploit",
+    "hack",
+    "trojan",
+    "payload",
+    "shell",
+    "cmd.exe",
+    "powershell",
+]
+
+
+def detect_threat(packet_info, payload=""):
+
+    src_port = packet_info.get("source_port", 0)
+    dst_port = packet_info.get("destination_port", 0)
+
+    payload = str(payload).lower()
+
+    # -------------------------------------------------------
+    # Rule 1 : Suspicious destination ports
+    # -------------------------------------------------------
+    if dst_port in SUSPICIOUS_PORTS:
+        threat, severity = SUSPICIOUS_PORTS[dst_port]
         return {
-            "threat": "SAFE",
-            "severity": "NONE",
-            "payload_status": "No Payload"
+            "threat": threat,
+            "severity": severity
         }
 
-    payload = payload.lower()
-
-    # SQL Injection
-    if ("drop table" in payload or
-        "union select" in payload or
-        "' or '1'='1" in payload):
-
+    # -------------------------------------------------------
+    # Rule 2 : Suspicious source ports
+    # -------------------------------------------------------
+    if src_port in SUSPICIOUS_PORTS:
+        threat, severity = SUSPICIOUS_PORTS[src_port]
         return {
-            "threat": "SQL Injection",
-            "severity": "HIGH",
-            "payload_status": "Readable"
+            "threat": threat,
+            "severity": severity
         }
 
-    # Cross Site Scripting
-    if "<script>" in payload:
+    # -------------------------------------------------------
+    # Rule 3 : Payload keyword detection
+    # -------------------------------------------------------
+    for word in SUSPICIOUS_KEYWORDS:
+        if word in payload:
+            return {
+                "threat": f"Suspicious Payload ({word})",
+                "severity": "HIGH"
+            }
 
+    # -------------------------------------------------------
+    # Rule 4 : Large payload detection
+    # -------------------------------------------------------
+    if len(payload) > 1500:
         return {
-            "threat": "Cross Site Scripting (XSS)",
-            "severity": "HIGH",
-            "payload_status": "Readable"
+            "threat": "Large Payload",
+            "severity": "MEDIUM"
         }
 
-    # Directory Traversal
-    if "../" in payload:
-
+    # -------------------------------------------------------
+    # Rule 5 : Unknown high-numbered ports
+    # -------------------------------------------------------
+    if dst_port > 49152:
         return {
-            "threat": "Directory Traversal",
-            "severity": "MEDIUM",
-            "payload_status": "Readable"
+            "threat": "Dynamic/Unknown Port",
+            "severity": "LOW"
         }
 
-    # Command Injection
-    if ("cmd.exe" in payload or
-        "/bin/sh" in payload):
-
-        return {
-            "threat": "Command Injection",
-            "severity": "HIGH",
-            "payload_status": "Readable"
-        }
-
+    # -------------------------------------------------------
+    # Safe packet
+    # -------------------------------------------------------
     return {
         "threat": "SAFE",
-        "severity": "NONE",
-        "payload_status": "Readable"
+        "severity": "NONE"
     }
