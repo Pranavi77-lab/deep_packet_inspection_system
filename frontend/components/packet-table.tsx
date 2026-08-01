@@ -36,56 +36,171 @@ const PAGE_SIZE = 12
 
 interface PacketTableProps {
   packets: Packet[]
-  /** When true, only threats (non-SAFE) are shown. */
   threatsOnly?: boolean
 }
 
-export function PacketTable({ packets, threatsOnly = false }: PacketTableProps) {
+export function PacketTable({
+  packets,
+  threatsOnly = false,
+}: PacketTableProps) {
+
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
-  const [sortKey, setSortKey] = useState<SortKey>('Packet ID')
-  const [sortDir, setSortDir] = useState<SortDir>('desc')
+
+  const [sortKey, setSortKey] =
+    useState<SortKey>('Packet ID')
+
+  const [sortDir, setSortDir] =
+    useState<SortDir>('desc')
+
+  // NEW FILTERS
+  const [severityFilter, setSeverityFilter] =
+    useState('ALL')
+
+  const [protocolFilter, setProtocolFilter] =
+    useState('ALL')
 
   const processed = useMemo(() => {
+
     let rows = packets
+
+    // Threat Only Filter
     if (threatsOnly) {
+
       rows = rows.filter(
-        (p) => (p.Threat ?? '').toUpperCase() !== 'SAFE',
+        (p) =>
+          (p.Threat ?? '').toUpperCase() !== 'SAFE'
       )
+
     }
+
+    // Severity Filter
+    if (severityFilter !== 'ALL') {
+
+      rows = rows.filter(
+        (p) =>
+          (p.Severity ?? '').toUpperCase() ===
+          severityFilter
+      )
+
+    }
+
+    // Protocol Filter
+    if (protocolFilter !== 'ALL') {
+
+      rows = rows.filter((p) => {
+
+        if (
+          protocolFilter === 'IPv4' ||
+          protocolFilter === 'IPv6'
+        ) {
+
+          return (
+            (p['IP Version'] ?? '')
+              .toUpperCase() === protocolFilter
+          )
+
+        }
+
+        return (
+          (p.Protocol ?? '').toUpperCase() ===
+          protocolFilter
+        )
+
+      })
+
+    }
+
+    // Search
     const q = query.trim().toLowerCase()
+
     if (q) {
+
       rows = rows.filter((p) =>
-        Object.values(p).some((v) => String(v).toLowerCase().includes(q)),
+        Object.values(p).some((v) =>
+          String(v).toLowerCase().includes(q)
+        )
       )
+
     }
+
+    // Sorting
     const sorted = [...rows].sort((a, b) => {
+
       const av = a[sortKey]
       const bv = b[sortKey]
-      let cmp: number
-      if (typeof av === 'number' && typeof bv === 'number') {
-        cmp = av - bv
-      } else {
-        cmp = String(av).localeCompare(String(bv), undefined, { numeric: true })
-      }
-      return sortDir === 'asc' ? cmp : -cmp
-    })
-    return sorted
-  }, [packets, query, sortKey, sortDir, threatsOnly])
 
-  const totalPages = Math.max(1, Math.ceil(processed.length / PAGE_SIZE))
+      let cmp: number
+
+      if (
+        typeof av === 'number' &&
+        typeof bv === 'number'
+      ) {
+
+        cmp = av - bv
+
+      } else {
+
+        cmp = String(av).localeCompare(
+          String(bv),
+          undefined,
+          { numeric: true }
+        )
+
+      }
+
+      return sortDir === 'asc'
+        ? cmp
+        : -cmp
+
+    })
+
+    return sorted
+
+  }, [
+    packets,
+    query,
+    sortKey,
+    sortDir,
+    threatsOnly,
+    severityFilter,
+    protocolFilter,
+  ])
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(processed.length / PAGE_SIZE)
+  )
+
   const currentPage = Math.min(page, totalPages)
-  const start = (currentPage - 1) * PAGE_SIZE
-  const pageRows = processed.slice(start, start + PAGE_SIZE)
+
+  const start =
+    (currentPage - 1) * PAGE_SIZE
+
+  const pageRows = processed.slice(
+    start,
+    start + PAGE_SIZE
+  )
 
   function toggleSort(key: SortKey) {
+
     if (key === sortKey) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+
+      setSortDir((d) =>
+        d === 'asc'
+          ? 'desc'
+          : 'asc'
+      )
+
     } else {
+
       setSortKey(key)
       setSortDir('desc')
+
     }
+
     setPage(1)
+
   }
 
   return (
@@ -110,6 +225,54 @@ export function PacketTable({ packets, threatsOnly = false }: PacketTableProps) 
           packets
         </p>
       </div>
+      <div className="flex flex-wrap items-center gap-4 rounded-xl border bg-secondary/20 p-3">
+
+  {/* Severity Filter */}
+  <div className="flex items-center gap-2">
+    <label className="text-sm font-medium">
+      Severity
+    </label>
+
+    <select
+      value={severityFilter}
+      onChange={(e) => {
+        setSeverityFilter(e.target.value)
+        setPage(1)
+      }}
+      className="rounded-lg border bg-background px-3 py-2 text-sm"
+    >
+      <option value="ALL">All</option>
+      <option value="NONE">Safe</option>
+      <option value="LOW">Low</option>
+      <option value="MEDIUM">Medium</option>
+      <option value="HIGH">High</option>
+    </select>
+  </div>
+
+  {/* Protocol Filter */}
+  <div className="flex items-center gap-2">
+    <label className="text-sm font-medium">
+      Protocol
+    </label>
+
+    <select
+      value={protocolFilter}
+      onChange={(e) => {
+        setProtocolFilter(e.target.value)
+        setPage(1)
+      }}
+      className="rounded-lg border bg-background px-3 py-2 text-sm"
+    >
+      <option value="ALL">All</option>
+      <option value="TCP">TCP</option>
+      <option value="UDP">UDP</option>
+      <option value="ICMP">ICMP</option>
+      <option value="IPv4">IPv4</option>
+      <option value="IPv6">IPv6</option>
+    </select>
+  </div>
+
+</div>
 
       <div className="overflow-hidden rounded-xl border">
         <div className="max-h-[540px] overflow-auto">

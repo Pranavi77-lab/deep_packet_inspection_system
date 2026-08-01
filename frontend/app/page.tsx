@@ -17,6 +17,7 @@ import { PacketTable } from '@/components/packet-table'
 import { AlertsPanel, getThreatPackets } from '@/components/alerts-panel'
 import { SettingsView } from '@/components/settings-view'
 
+
 const VIEW_TITLES: Record<ViewId, { title: string; subtitle: string }> = {
   dashboard: { title: 'Dashboard', subtitle: 'Live network overview & security posture' },
   packets: { title: 'Packet Logs', subtitle: 'Every captured packet, newest first' },

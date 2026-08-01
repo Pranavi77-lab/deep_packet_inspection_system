@@ -33,7 +33,16 @@ export interface Packet {
   Severity: string
   'Payload Status': string
 }
-
+export interface Alert {
+  timestamp: string
+  source_ip: string
+  destination_ip: string
+  protocol: string
+  source_port: number
+  destination_port: number
+  threat: string
+  severity: string
+}
 export const EMPTY_STATS: Stats = {
   total_packets: 0,
   tcp_packets: 0,
@@ -52,4 +61,15 @@ export async function fetchStats(signal?: AbortSignal): Promise<Stats> {
 export async function fetchPackets(signal?: AbortSignal): Promise<Packet[]> {
   const { data } = await api.get<Packet[]>('/packets', { signal })
   return Array.isArray(data) ? data : []
+}
+export async function fetchAlerts(
+  signal?: AbortSignal,
+): Promise<Alert[]> {
+
+  const { data } = await api.get<Alert[]>('/alerts', {
+    signal,
+  })
+
+  return Array.isArray(data) ? data : []
+
 }

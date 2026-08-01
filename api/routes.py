@@ -1,5 +1,7 @@
 from flask import Blueprint, jsonify
 import pandas as pd
+import os
+import json
 
 api = Blueprint("api", __name__)
 
@@ -28,3 +30,19 @@ def get_packets():
     df = pd.read_csv("data/logs.csv")
 
     return jsonify(df.tail(50).to_dict(orient="records"))
+@api.route("/alerts")
+def get_alerts():
+
+    alert_file = "data/alerts.json"
+
+    if not os.path.exists(alert_file):
+        return jsonify([])
+
+    try:
+        with open(alert_file, "r") as f:
+            alerts = json.load(f)
+
+        return jsonify(alerts)
+
+    except Exception:
+        return jsonify([])
