@@ -27,6 +27,7 @@ def generate_alert(packet_info, threat_info):
     }
 
     alerts = []
+  
 
     if os.path.exists(ALERT_FILE):
         try:
@@ -40,7 +41,7 @@ def generate_alert(packet_info, threat_info):
     # Keep only latest 50 alerts
     alerts = alerts[:50]
 
-    with open(ALERT_FILE, "w") as f:
+    with open(ALERT_FILE, "w") as f: 
         json.dump(alerts, f, indent=4)
 
     print("\n🚨 ALERT GENERATED 🚨")
